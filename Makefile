@@ -62,11 +62,25 @@ iverilog_sim:
 	vvp $(SIM_OPENIES)
 	@echo "Simulation complete. Check sync_fifo.vcd for waveforms"
 
+# Python-based simulator (works in environments without Verilog tools)
+python_sim:
+	@echo "Running Python FIFO simulator..."
+	python3 sim_fifo.py
+	@echo "Simulation complete. Check sync_fifo.vcd for waveforms"
+
 gtkwave:
 	@if [ -f sync_fifo.vcd ]; then \
 		gtkwave sync_fifo.vcd &; \
 	else \
-		echo "Error: sync_fifo.vcd not found. Run 'make iverilog_sim' first"; \
+		echo "Error: sync_fifo.vcd not found. Run 'make python_sim' or 'make iverilog_sim' first"; \
+	fi
+
+viewer:
+	@echo "Opening waveform viewer in default browser..."
+	@if [ -f wave_viewer.html ]; then \
+		python3 -m webbrowser "file://$(PWD)/wave_viewer.html" 2>/dev/null || echo "Open wave_viewer.html manually in your browser"; \
+	else \
+		echo "Error: wave_viewer.html not found"; \
 	fi
 
 clean:

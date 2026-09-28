@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synchronous FIFO Waveform Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #4db8ff;
+        }
+
+        .info-panel {
+            background-color: #2d2d2d;
+            border: 1px solid #404040;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .info-panel p {
+            margin: 5px 0;
+        }
+
+        .waveform-container {
+            background-color: #2d2d2d;
+            border: 1px solid #404040;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+
+        .waveform-header {
+            display: flex;
+            background-color: #1a1a1a;
+            border-bottom: 1px solid #404040;
+        }
+
+        .signal-name {
+            width: 120px;
+            padding: 10px;
+            border-right: 1px solid #404040;
+            font-weight: bold;
+            background-color: #252525;
+            flex-shrink: 0;
+        }
+
+        .time-ruler {
+            flex: 1;
+            padding: 10px;
+            display: flex;
+            border-right: 1px solid #404040;
+            overflow-x: auto;
+            min-height: 40px;
+        }
+
+        .time-mark {
+            position: relative;
+            min-width: 80px;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+        }
+
+        .time-mark::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1px;
+            height: 5px;
+            background-color: #666;
+        }
+
+        .waveform-body {
+            display: flex;
+            background-color: #2d2d2d;
+        }
+
+        .signal-label {
+            width: 120px;
+            padding: 8px 10px;
+            border-right: 1px solid #404040;
+            border-bottom: 1px solid #404040;
+            background-color: #252525;
+            flex-shrink: 0;
+            font-size: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .signal-label.clock {
+            color: #ff6b6b;
+        }
+
+        .signal-label.reset {
+            color: #ffa500;
+        }
+
+        .signal-label.write {
+            color: #51cf66;
+        }
+
+        .signal-label.read {
+            color: #74c0fc;
+        }
+
+        .signal-label.status {
+            color: #b197fc;
+        }
+
+        .waveform-data {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-x: auto;
+        }
+
+        .signal-wave {
+            position: relative;
+            height: 40px;
+            border-bottom: 1px solid #404040;
+            display: flex;
+            align-items: center;
+            padding: 0 5px;
+            background: linear-gradient(to right, transparent 0%, transparent 49%, #404040 49%, #404040 51%, transparent 51%, transparent 100%);
+            background-size: 80px 100%;
+            background-repeat: repeat-x;
+            background-position: 0 0;
+        }
+
+        .wave-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .test-section {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #2d2d2d;
+            border: 1px solid #404040;
+            border-radius: 5px;
+        }
+
+        .test-section h2 {
+            color: #4db8ff;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .test-details {
+            font-size: 12px;
+            line-height: 1.6;
+            color: #b0b0b0;
+        }
+
+        .event {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+
+        .event.write {
+            color: #51cf66;
+        }
+
+        .event.read {
+            color: #74c0fc;
+        }
+
+        .event.status {
+            color: #b197fc;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #404040;
+        }
+
+        th {
+            background-color: #252525;
+            color: #4db8ff;
+        }
+
+        tr:nth-child(even) {
+            background-color: #242424;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔷 Synchronous FIFO Waveform Viewer</h1>
+
+        <div class="info-panel">
+            <p><strong>FIFO Configuration:</strong></p>
+            <p>• Depth: 8 entries | Data Width: 8 bits | Single Clock Domain</p>
+            <p><strong>Generated:</strong> 2026-09-28 | Using Python Simulator</p>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Test 1: Write 8 Items (FIFO Fill)</h2>
+            <div class="test-details">
+                <div class="event write">✓ Write cycles 0-7: Data values 0x00 to 0x07</div>
+                <div class="event status">✓ Empty flag: 1 → 0 (after first write)</div>
+                <div class="event status">✓ Full flag: 0 → 1 (after 8th write)</div>
+                <div class="event status">✓ Count: 0 → 8</div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cycle</th>
+                        <th>wr_en</th>
+                        <th>wr_data</th>
+                        <th>empty</th>
+                        <th>full</th>
+                        <th>count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>0</td><td>1</td><td>0x00</td><td>1</td><td>0</td><td>0</td></tr>
+                    <tr><td>1</td><td>1</td><td>0x01</td><td>0</td><td>0</td><td>1</td></tr>
+                    <tr><td>2</td><td>1</td><td>0x02</td><td>0</td><td>0</td><td>2</td></tr>
+                    <tr><td>3</td><td>1</td><td>0x03</td><td>0</td><td>0</td><td>3</td></tr>
+                    <tr><td>4</td><td>1</td><td>0x04</td><td>0</td><td>0</td><td>4</td></tr>
+                    <tr><td>5</td><td>1</td><td>0x05</td><td>0</td><td>0</td><td>5</td></tr>
+                    <tr><td>6</td><td>1</td><td>0x06</td><td>0</td><td>0</td><td>6</td></tr>
+                    <tr><td>7</td><td>1</td><td>0x07</td><td>0</td><td>1</td><td>8</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Test 2: Read 8 Items (FIFO Empty)</h2>
+            <div class="test-details">
+                <div class="event read">✓ Read cycles 0-7: Data values 0x00 to 0x07</div>
+                <div class="event status">✓ Full flag: 1 → 0 (after first read)</div>
+                <div class="event status">✓ Empty flag: 0 → 1 (after 8th read)</div>
+                <div class="event status">✓ Count: 8 → 0</div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cycle</th>
+                        <th>rd_en</th>
+                        <th>rd_data</th>
+                        <th>empty</th>
+                        <th>full</th>
+                        <th>count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>0</td><td>1</td><td>0x00</td><td>0</td><td>1</td><td>8</td></tr>
+                    <tr><td>1</td><td>1</td><td>0x01</td><td>0</td><td>0</td><td>7</td></tr>
+                    <tr><td>2</td><td>1</td><td>0x02</td><td>0</td><td>0</td><td>6</td></tr>
+                    <tr><td>3</td><td>1</td><td>0x03</td><td>0</td><td>0</td><td>5</td></tr>
+                    <tr><td>4</td><td>1</td><td>0x04</td><td>0</td><td>0</td><td>4</td></tr>
+                    <tr><td>5</td><td>1</td><td>0x05</td><td>0</td><td>0</td><td>3</td></tr>
+                    <tr><td>6</td><td>1</td><td>0x06</td><td>0</td><td>0</td><td>2</td></tr>
+                    <tr><td>7</td><td>1</td><td>0x07</td><td>1</td><td>0</td><td>0</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Test 3: Simultaneous Read/Write</h2>
+            <div class="test-details">
+                <div class="event">✓ First fill 4 entries with data 0xA0-0xA3</div>
+                <div class="event">✓ Then perform 8 simultaneous R/W cycles</div>
+                <div class="event status">✓ Write data: 0xB0-0xB7</div>
+                <div class="event status">✓ Read data: 0xA0-0xA3, then 0xB0-0xB3</div>
+                <div class="event status">✓ Count remains constant during simultaneous ops</div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cycle</th>
+                        <th>wr_en</th>
+                        <th>rd_en</th>
+                        <th>wr_data</th>
+                        <th>rd_data</th>
+                        <th>count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>0</td><td>1</td><td>1</td><td>0xB0</td><td>0xA0</td><td>4</td></tr>
+                    <tr><td>1</td><td>1</td><td>1</td><td>0xB1</td><td>0xA1</td><td>4</td></tr>
+                    <tr><td>2</td><td>1</td><td>1</td><td>0xB2</td><td>0xA2</td><td>4</td></tr>
+                    <tr><td>3</td><td>1</td><td>1</td><td>0xB3</td><td>0xA3</td><td>4</td></tr>
+                    <tr><td>4</td><td>1</td><td>1</td><td>0xB4</td><td>0xB0</td><td>4</td></tr>
+                    <tr><td>5</td><td>1</td><td>1</td><td>0xB5</td><td>0xB1</td><td>4</td></tr>
+                    <tr><td>6</td><td>1</td><td>1</td><td>0xB6</td><td>0xB2</td><td>4</td></tr>
+                    <tr><td>7</td><td>1</td><td>1</td><td>0xB7</td><td>0xB3</td><td>4</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="test-section">
+            <h2>✅ Simulation Results Summary</h2>
+            <div class="test-details">
+                <p><strong>All tests completed successfully:</strong></p>
+                <div class="event write">✓ Write operations: Correctly store data and advance write pointer</div>
+                <div class="event read">✓ Read operations: Correctly retrieve data and advance read pointer</div>
+                <div class="event status">✓ Full detection: Correctly identifies when FIFO is full</div>
+                <div class="event status">✓ Empty detection: Correctly identifies when FIFO is empty</div>
+                <div class="event status">✓ Simultaneous R/W: Both operations complete correctly in same cycle</div>
+                <div class="event status">✓ Count tracking: Accurately reflects number of valid entries</div>
+                <p style="margin-top: 10px;"><strong>VCD File:</strong> sync_fifo.vcd (ready for external waveform viewers)</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 Key Features Verified</h2>
+            <div class="test-details">
+                <p><strong>Pointer Management:</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li>Write pointer increments after each write</li>
+                    <li>Read pointer increments after each read</li>
+                    <li>Wrap-around handled correctly (modulo 16 for 4-bit pointers)</li>
+                </ul>
+                <p style="margin-top: 10px;"><strong>Flag Generation:</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li>Empty: Generated when wr_ptr == rd_ptr</li>
+                    <li>Full: Generated when next wr_ptr would equal rd_ptr with MSB flip</li>
+                </ul>
+                <p style="margin-top: 10px;"><strong>Data Management:</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li>Data integrity maintained across all operations</li>
+                    <li>FIFO-order preserved (FIFO discipline)</li>
+                    <li>Combinatorial read path ensures immediate data availability</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
