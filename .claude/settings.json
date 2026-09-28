@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": ".claude/hooks/verify-rtl.sh",
+        "shell": "bash"
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "bash",
+      "python3",
+      "git",
+      "make"
+    ]
+  }
+}
