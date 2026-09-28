@@ -1,0 +1,36 @@
+# Simulation outputs
+*.vcd
+*.wdb
+*.fdb_ver
+
+# EDA tool outputs
+xwork/
+.Xil/
+*.pb
+*.jou
+*.log
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Compiled artifacts
+fifo_test
+*.o
+*.a
+*.so
+
+# OS files
+.DS_Store
+Thumbs.db
